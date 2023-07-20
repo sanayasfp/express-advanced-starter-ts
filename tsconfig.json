@@ -1,0 +1,39 @@
+{
+  "compilerOptions": {
+    "outDir": "dist",
+    "sourceMap": true,
+    "target": "esnext",
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "App": ["src/app"],
+      "App/*": ["src/app/*"],
+      "Routes": ["src/app/Routes"],
+      "Routes/*": ["src/app/Routes/*"],
+      "Config": ["src/config"],
+      "Config/*": ["src/config/*"],
+      "Interfaces": ["src/interfaces"],
+      "Interfaces/*": ["src/interfaces/*"],
+      "Public": ["src/public"],
+      "Public/*": ["src/public/*"],
+      "Tests": ["src/tests"],
+      "Tests/*": ["src/tests/*"],
+      "Utils": ["src/utils"],
+      "Utils/*": ["src/utils/*"]
+    }
+  },
+  "include": [
+    "./*.js",
+    "src/**/*.ts",
+  ],
+  "ts-node": { /* Ask ts-node to use  our personalized paths. */
+    "require": [
+      "tsconfig-paths/register"
+    ]
+  }
+}
