@@ -89,8 +89,11 @@ class Router {
     };
   }
 
-  public use(path: string, handler: RouteHandler | string): Router {
-    this.addRoute('use', path, handler);
+  public use(path: string, ...handlers: (Router | RouteHandler | string)[]): Router {
+    handlers.forEach((handler) => {
+      if (handler instanceof Router) this.routes.push(...handler.routes);
+      else this.addRoute('use', path, handler);
+    });
     return this;
   }
 
@@ -133,7 +136,7 @@ class Router {
   ) {
     handler = dir === 'Middlewares' && typeof handler === 'string' ? `${handler}.handle` : handler;
     let ControllerClass: typeof Controller = Controller;
-    
+
     if (typeof handler === 'string') {
       const [controllerName, methodName] = handler.split('.');
       ControllerClass = require(join(

@@ -3,7 +3,7 @@ import RouteHandlerParams from 'Interfaces/Kernel/RouteHandlerParams';
 import * as httpStatus from 'http-status-codes';
 
 class Controller {
-  static moduleName = 'Controllers';
+  static moduleName = 'Kernel';
 
   static handler(c: typeof Controller, name: string) {
     return `${c.moduleName}.${name}`;
@@ -11,6 +11,7 @@ class Controller {
 
   static responseBuilder(ctx: Partial<RouteHandlerParams>, res: string | number | Partial<Response> = {}) {
     if (typeof res === 'string' || typeof res === 'number') res = { message: String(res) } as Response;
+
 
     const statusCode = res.statusCode || ctx.res?.statusCode || 200;
     ctx.res?.status(statusCode);
@@ -21,20 +22,15 @@ class Controller {
         ? [res]
         : [];
 
+    res.errors = res.errors || (res as any).error;
+
     res.errors = Array.isArray(res.errors)
       ? res.errors
       : typeof res.errors === 'object' && res.errors !== null && Object.keys(res.errors).length > 0
         ? [res]
         : [];
 
-    res.errors = Array.isArray((res as any).error)
-      ? (res as any).error
-      : typeof (res as any).error === 'object' && (res as any).error !== null && Object.keys((res as any).error).length > 0
-        ? [res]
-        : [];
-
     const o: Response = {
-      ...(res || {}),
       statusCode,
       success: false,
       message: res ? res.message ||
@@ -54,16 +50,18 @@ class Controller {
     delete res.metaData;
 
     o.errors = o.errors.length > 0
-      ? res.errors : (Array.isArray(res)
+      ? o.errors : (Array.isArray(res)
         ? res as any
         : typeof res === 'object' && res !== null && Object.keys(res).length > 0
           ? [res]
           : []);
 
+    console.log('o.errors', o.errors);
+
     if (statusCode >= 200 && statusCode < 300) {
       o.success = true;
       o.data = o.data.length > 0
-        ? res.data : Array.isArray(res)
+        ? o.data : Array.isArray(res)
           ? res as any
           : typeof res === 'object' && res !== null && Object.keys(res).length > 0
             ? [res]
