@@ -4,7 +4,7 @@ interface Response {
   message: string;
   data: Record<string | number, any>[];
   errors: Record<string, any>[]; // ValidatorError[];
-  metaData: Record<string | number, any>;
+  meta_data: Record<string | number, any>;
 }
 
 export default Response;

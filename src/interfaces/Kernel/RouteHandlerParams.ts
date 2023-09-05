@@ -1,7 +1,8 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
+import ExpressRequest from 'Interfaces/Kernel/ExpressRequest';
 
 interface RouteHandlerParams {
-  req: Request;
+  req: ExpressRequest;
   res: Response;
   // next: NextFunction;
 }

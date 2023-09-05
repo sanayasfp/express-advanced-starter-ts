@@ -6,6 +6,7 @@ import Route from 'Interfaces/Kernel/Route';
 import RouteHandler from 'Interfaces/Kernel/RouteHandler';
 import MiddlewareHandler from 'Interfaces/Kernel/MiddlewareHandler';
 import Controller from 'App/Http/Controllers/Kernel';
+import MiddlewareHandlerParams from 'Interfaces/Kernel/MiddlewareHandlerParams';
 
 class Router {
   private routes: Route[] = [];
@@ -35,27 +36,27 @@ class Router {
   }
 
   public post(path: string, handler: RouteHandler | string): Router {
-    this.addRoute('post', path, handler);
+    this.addRoute('post', path.trim(), handler);
     return this;
   }
 
   public get(path: string, handler: RouteHandler | string): Router {
-    this.addRoute('get', path, handler);
+    this.addRoute('get', path.trim(), handler);
     return this;
   }
 
   public put(path: string, handler: RouteHandler | string): Router {
-    this.addRoute('put', path, handler);
+    this.addRoute('put', path.trim(), handler);
     return this;
   }
 
   public patch(path: string, handler: RouteHandler | string): Router {
-    this.addRoute('patch', path, handler);
+    this.addRoute('patch', path.trim(), handler);
     return this;
   }
 
   public delete(path: string, handler: RouteHandler | string): Router {
-    this.addRoute('delete', path, handler);
+    this.addRoute('delete', path.trim(), handler);
     return this;
   }
 
@@ -89,11 +90,8 @@ class Router {
     };
   }
 
-  public use(path: string, ...handlers: (Router | RouteHandler | string)[]): Router {
-    handlers.forEach((handler) => {
-      if (handler instanceof Router) this.routes.push(...handler.routes);
-      else this.addRoute('use', path, handler);
-    });
+  public use(path: string, handler: RouteHandler | string): Router {
+    this.addRoute('use', path, handler);
     return this;
   }
 
@@ -101,19 +99,29 @@ class Router {
     const router = express.Router();
     this.routes.forEach((route) => {
       const { method, path, handler, middlewares } = route;
-      const routeHandler = this.resolveHandler(handler);
       const routeMiddlewares = middlewares.map((middleware) =>
-        (req: Request, res: Response, next: NextFunction) => {
-          const result = this.resolveHandler(middleware, 'Middlewares').handler({ req, res, next });
-          if (!res.headersSent) res.send(routeHandler.controller.responseBuilder({ res }, result as any));
+        async (req: Request, res: Response, next: NextFunction) => {
+          await this.handlerCaller({ req, res, next }, this.resolveHandler(middleware, 'Middlewares'), 'Middleware');
         },
       );
-      router[method](path, ...routeMiddlewares, (req: Request, res: Response, next: NextFunction) => {
-        const result = routeHandler.handler({ req, res, next });
-        if (!res.headersSent) res.send(routeHandler.controller.responseBuilder({ res }, result as any));
+      router[method](path, ...routeMiddlewares, async (req: Request, res: Response, next: NextFunction) => {
+        await this.handlerCaller({ req, res, next }, this.resolveHandler(handler));
       });
     });
     return router;
+  }
+
+  private async handlerCaller(ctx: MiddlewareHandlerParams, resolver: ReturnType<Router['resolveHandler']>, handlerType: 'Controller' | 'Middleware' = 'Controller') {
+    let result;
+    const { controllerMethod, controllerClass } = resolver;
+    const controller = new controllerClass(ctx);
+
+    if (typeof controllerMethod === 'string') {
+      const handler = (controller as any)[controllerMethod].bind(controller);
+      result = await handler(ctx);
+    } else [result] = await Promise.all([controllerMethod(ctx)]);
+
+    if (!ctx.res.headersSent && !(!result && handlerType === 'Middleware')) ctx.res.send(controller.responseBuilder(result));
   }
 
   private addRoute(method: Method, path: string, handler: RouteHandler | string): void {
@@ -146,10 +154,9 @@ class Router {
         dir,
         controllerName,
       )).default;
-      const ClassHandler: any = new ControllerClass();
-      handler = ClassHandler[methodName].bind(ClassHandler);
+      handler = methodName;
     }
-    return { handler: handler as unknown as MiddlewareHandler, controller: ControllerClass };
+    return { controllerMethod: handler, controllerClass: ControllerClass };
   }
 }
 
@@ -158,3 +165,6 @@ class Router {
 const Route = Router.create() as Exclude<Router, 'middleware'>;
 
 export default Route;
+
+
+// TODO: UPGRADE IN STARTER

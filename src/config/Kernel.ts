@@ -5,19 +5,21 @@ import * as path from 'path';
 export default class Config {
   private readonly config: Record<string, any>;
 
-  constructor(_envFilePath?: string) {
-    const envFilePath = _envFilePath || this.findEnvFile();
+  constructor({ envFilePath, envFileName }: { envFilePath?: string; envFileName?: string; } = {}) {
+    envFilePath = envFilePath || this.findEnvFile(envFileName);
     dotenv.config({ path: envFilePath });
     this.config = process.env;
   }
 
-  private findEnvFile(): string {
+  private findEnvFile(envFileName?: string): string {
     const rootPath = process.cwd();
     let currentPath = rootPath;
 
+    const fileMatcher = envFileName || /^\.env(\..+)?$/;
+
     while (true) {
       const files = fs.readdirSync(currentPath);
-      const envFile = files.find((file) => file.match(/^\.env(\..+)?$/));
+      const envFile = files.find((file) => file.match(fileMatcher));
 
       if (envFile) {
         return path.join(currentPath, envFile);
@@ -34,8 +36,8 @@ export default class Config {
     throw new Error('No .env file found');
   }
 
-  get<T extends string | number | boolean = string>(key: string): T | undefined {
-    return this.config[key] as T | undefined;
+  get<T extends string | number | boolean = string>(key: string, defaultValue?: string | number | boolean): T | undefined {
+    return (this.config[key] || defaultValue) as T | undefined;
   }
 
   getOrThrow<T extends string = string>(key: string) {
@@ -45,8 +47,8 @@ export default class Config {
     return value;
   }
 
-  getInt(key: string): number | undefined {
-    return parseInt(`${this.get(key)}`, 10) || undefined;
+  getInt(key: string, defaultValue?: number): number | undefined {
+    return parseInt(`${this.get(key, defaultValue)}`, 10) || undefined;
   }
 
   getIntOrThrow(key: string) {
@@ -56,8 +58,8 @@ export default class Config {
     return value;
   }
 
-  getBoolean(key: string): boolean | undefined {
-    const value = this.get(key);
+  getBoolean(key: string, defaultValue?: boolean): boolean | undefined {
+    const value = this.get<string | boolean>(key, defaultValue);
     if (typeof value === 'boolean') {
       return value;
     }

@@ -1,7 +1,8 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
+import ExpressRequest from 'Interfaces/Kernel/ExpressRequest';
 
 interface MiddlewareHandlerParams {
-  req: Request;
+  req: ExpressRequest;
   res: Response;
   next: NextFunction;
 }

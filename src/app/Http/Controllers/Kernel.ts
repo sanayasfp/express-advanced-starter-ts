@@ -1,3 +1,5 @@
+import Config from 'Config';
+import MiddlewareHandlerParams from 'Interfaces/Kernel/MiddlewareHandlerParams';
 import Response from 'Interfaces/Kernel/Response';
 import RouteHandlerParams from 'Interfaces/Kernel/RouteHandlerParams';
 import * as httpStatus from 'http-status-codes';
@@ -5,16 +7,26 @@ import * as httpStatus from 'http-status-codes';
 class Controller {
   static moduleName = 'Kernel';
 
+
+  config: Config;
+
+  ctx: RouteHandlerParams;
+
+  constructor(ctx: RouteHandlerParams | MiddlewareHandlerParams) {
+    this.config = new Config();
+    this.ctx = ctx;
+  }
+
   static handler(c: typeof Controller, name: string) {
     return `${c.moduleName}.${name}`;
   }
 
-  static responseBuilder(ctx: Partial<RouteHandlerParams>, res: string | number | Partial<Response> = {}) {
+  responseBuilder(res: string | number | Partial<Response> = {}) {
     if (typeof res === 'string' || typeof res === 'number') res = { message: String(res) } as Response;
 
 
-    const statusCode = res.statusCode || ctx.res?.statusCode || 200;
-    ctx.res?.status(statusCode);
+    const statusCode = res.statusCode || this.ctx?.res?.statusCode || 200;
+    this.ctx?.res?.status(statusCode);
 
     res.data = Array.isArray(res.data)
       ? res.data
@@ -39,31 +51,31 @@ class Controller {
         : httpStatus.getReasonPhrase(statusCode),
       data: res.data || [],
       errors: res.errors || [],
-      metaData: res?.metaData || {},
+      meta_data: res?.meta_data || {},
     };
+
+    const success = res.success;
 
     delete res.statusCode;
     delete res.success;
     delete res.message;
     delete res.data;
     delete res.errors;
-    delete res.metaData;
+    delete res.meta_data;
 
     o.errors = o.errors.length > 0
       ? o.errors : (Array.isArray(res)
         ? res as any
-        : typeof res === 'object' && res !== null && Object.keys(res).length > 0
+        : typeof res === 'object' && Object.keys(res).length > 0
           ? [res]
           : []);
 
-    console.log('o.errors', o.errors);
-
     if (statusCode >= 200 && statusCode < 300) {
-      o.success = true;
+      o.success = success === undefined || success === null ? true : success;
       o.data = o.data.length > 0
         ? o.data : Array.isArray(res)
           ? res as any
-          : typeof res === 'object' && res !== null && Object.keys(res).length > 0
+          : typeof res === 'object' && Object.keys(res).length > 0
             ? [res]
             : [];
       o.errors = [];
@@ -73,3 +85,5 @@ class Controller {
 }
 
 export default Controller;
+
+// TODO: UPGRADE IN STARTER

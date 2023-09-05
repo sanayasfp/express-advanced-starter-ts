@@ -1,6 +1,13 @@
 import MiddlewareHandler from 'Interfaces/Kernel/MiddlewareHandler';
 
-abstract class Middleware {
+// interface Middleware {
+//   // new(): {
+//   handle: MiddlewareHandler
+//   // };
+//   // new(): Middleware;
+// }
+
+abstract class Middleware implements Middleware {
   abstract handle: MiddlewareHandler;
 }
 
